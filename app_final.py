@@ -56,8 +56,8 @@ st.markdown(
         font-style: italic;
     }
     </style>
-    <div class='title-text'>Mighty to Save 🕊️</div>
-    <h5 style='text-align: center; color: #4682B4;'>— Pendamping Firman Anda Berdasarkan Ayat Alkitab —</h5>
+    <div class='title-text'>God Creation 🕊️</div>
+    <h5 style='text-align: center; color: #4682B4;'>— Pendamping Firman Anda Berdasarkan Ayat Alkitab  —</h5>
     """,
     unsafe_allow_html=True
 )
@@ -304,4 +304,3 @@ if __name__ == "__main__":
 
             st.markdown(full_response)
             st.session_state.messages.append({"role": "assistant", "content": full_response})
-
