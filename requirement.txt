@@ -1,0 +1,6 @@
+streamlit
+pandas
+llama-index-core
+llama-index-llms-google-genai
+llama-index-embeddings-google-genai
+google-genai
