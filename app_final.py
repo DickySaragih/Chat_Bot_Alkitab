@@ -304,3 +304,4 @@ if __name__ == "__main__":
 
             st.markdown(full_response)
             st.session_state.messages.append({"role": "assistant", "content": full_response})
+
