@@ -1,5 +1,8 @@
+# Library Utama Streamlit & Data
 streamlit
 pandas
+
+# Core LlamaIndex dan LLM serta Embeddings Google
 llama-index-core
 llama-index-llms-google-genai
 llama-index-embeddings-google-genai
