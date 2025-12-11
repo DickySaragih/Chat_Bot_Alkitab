@@ -46,6 +46,15 @@ st.markdown(
     [data-testid="stSidebar"] {
         background-color: #E6E6FA;
     }
+    /* Custom style untuk highlight */
+    .highlight-verse {
+        background-color: #e6f3ff; /* Biru muda lembut */
+        border-left: 5px solid #4682B4;
+        padding: 10px;
+        margin: 5px 0;
+        border-radius: 5px;
+        font-style: italic;
+    }
     </style>
     <div class='title-text'>Mighty to Save 🕊️</div>
     <h5 style='text-align: center; color: #4682B4;'>— Pendamping Firman Anda Berdasarkan Alkitab AYT —</h5>
@@ -69,12 +78,32 @@ def load_and_index_data():
 
     try:
         # Pemuatan dan Pemrosesan Data CSV
+        # PERBAIKAN: Disesuaikan dengan nama kolom di gambar CSV Anda
         df = pd.read_csv(DATA_FILE)
-        df['referensi'] = df['book'].astype(str) + ' ' + df['chapter'].astype(str) + ':' + df['verse'].astype(str)
+        
+        # Membersihkan teks (menghapus tag <t/> jika ada)
+        # Asumsi nama kolom berdasarkan gambar: 'Nama ayat' (Kitab), 'Bagian' (Pasal), 'Ayat', 'Isi'
+        
+        # Kita buat kolom 'text_bersih' untuk isi ayat
+        if 'Isi' in df.columns:
+            df['text_bersih'] = df['Isi'].astype(str).str.replace('<t/>', '', regex=False)
+        else:
+            # Fallback jika nama kolom beda (misal text)
+            df['text_bersih'] = df['text'].astype(str)
+
+        # Membuat Referensi Lengkap (Contoh: Kejadian 1:1)
+        # Menggunakan 'Nama ayat' (bukan 'Buku' yang isinya angka)
+        df['referensi'] = df['Nama ayat'].astype(str) + ' ' + df['Bagian'].astype(str) + ':' + df['Ayat'].astype(str)
+        
         documents = [
             Document(
-                text=row['text'],
-                metadata={"referensi": row['referensi'], "kitab": row['book']}
+                text=row['text_bersih'],
+                metadata={
+                    "referensi": row['referensi'], 
+                    "kitab": row['Nama ayat'],
+                    "pasal": row['Bagian'],
+                    "ayat": row['Ayat']
+                }
             )
             for index, row in df.iterrows()
         ]
@@ -82,7 +111,7 @@ def load_and_index_data():
         # Inisialisasi LLM
         llm = GoogleGenAI(model=LLM_MODEL, api_key=API_KEY_ANDA)
 
-        # --- MENGGUNAKAN GoogleGenAIEmbedding (Solusi Konflik) ---
+        # --- MENGGUNAKAN GoogleGenAIEmbedding ---
         embed_model = GoogleGenAIEmbedding(
              model='models/embedding-001',
              api_key=API_KEY_ANDA
@@ -93,10 +122,13 @@ def load_and_index_data():
         index = VectorStoreIndex.from_documents(
             documents,
             llm=llm,
-            embed_model=embed_model # Menggunakan Google Embedding
+            embed_model=embed_model
         )
         return index, llm
 
+    except KeyError as e:
+        st.error(f"❌ ERROR: Nama kolom CSV tidak sesuai. Pastikan ada kolom 'Nama ayat', 'Bagian', 'Ayat', dan 'Isi'. Detail: {e}")
+        return None, None
     except FileNotFoundError:
         st.error(f"❌ ERROR: File data '{DATA_FILE}' tidak ditemukan. Mohon pastikan file CSV ada di folder yang sama.")
         return None, None
@@ -116,24 +148,35 @@ def get_query_engine():
     if INDEX is None or LLM is None:
         return None
 
-    # Prompt Template Kustom
+    # Prompt Template Kustom (DIPERBARUI UNTUK FORMAT CANTIK)
     custom_qa_template = PromptTemplate(
-        """Anda adalah 'Pendamping Firman', sebuah Chatbot Alkitab yang bersuara ramah, bijaksana, dan menenangkan, seolah-olah Anda adalah sahabat tepercaya.
-        Tugas utama Anda adalah menjawab pertanyaan pengguna HANYA berdasarkan konteks informasi Alkitab yang tersedia di bawah ini.
-
-        Berikut adalah panduan ketat untuk gaya dan jawaban Anda:
-        1. Gaya Bicara: Gunakan bahasa Indonesia yang hangat, mudah dipahami, dan hindari jawaban kaku. Selalu sertakan referensi ayat (Kitab, Pasal:Ayat) dari konteks di akhir jawaban Anda untuk memverifikasi.
-        2. Ayat Spesifik: Jika pengguna meminta ayat Alkitab spesifik (misalnya, "Matius 1:1", "Yohanes 3:16"), fokus untuk menemukan dan mengutip ayat tersebut secara langsung dari konteks yang diberikan.
-        3. Pertanyaan Umum/Interpretatif: Jika pertanyaan menyangkut topik umum (misalnya, "apa pesan Alkitab tentang kesabaran?"), rangkum dan sintesiskan informasi dari konteks yang relevan. Berikan jawaban yang penuh hikmat dan mendorong.
-        4. Keterbatasan: Jika Anda tidak dapat menemukan jawaban langsung atau ayat yang diminta, jelaskan dengan sopan dan jujur bahwa Anda tidak bisa menjawab berdasarkan data Alkitab yang tersedia.
+        """Anda adalah 'Pendamping Firman', Chatbot Alkitab yang bijaksana.
+        
+        Tugas Anda: Menjawab pertanyaan berdasarkan konteks Alkitab di bawah ini.
+        
+        ATURAN FORMAT JAWABAN (PENTING):
+        1. JANGAN PERNAH menyebutkan "Kitab 10" atau "Kitab 19". Gunakan nama kitab asli (misal: Kejadian, Mazmur).
+        2. Jika menemukan ayat yang relevan, KUTIP AYAT TERSEBUT SECARA LENGKAP.
+        3. Gunakan format Markdown ini agar tampilan indah:
+           - Untuk Referensi Ayat, gunakan warna biru/bold. Contoh: **:blue[Kejadian 1:1]**
+           - Untuk Isi Ayat, gunakan format kutipan (blockquote). Contoh: > "Pada mulanya..."
+           - Untuk Penjelasan, gunakan teks biasa yang ramah.
+        
+        Contoh Tampilan yang Diharapkan:
+        "Berikut adalah ayat yang Anda cari:
+        
+        **:blue[Roma 3:23]**
+        > _"Karena semua orang telah berbuat dosa dan telah kehilangan kemuliaan Allah."_
+        
+        Ayat ini menjelaskan bahwa..."
 
         Berikut adalah konteks informasi Alkitab:
         {context_str}
 
-        Berikut adalah pertanyaan pengguna:
+        Pertanyaan pengguna:
         {query_str}
 
-        Jawaban Anda (Gaya ramah, bijaksana, dan menyertakan referensi):"""
+        Jawaban Anda:"""
     )
 
     return INDEX.as_query_engine(
@@ -163,7 +206,6 @@ def generate_response(query):
 
         return bot_response_text
     except Exception as e:
-        # Menangkap error API Key yang tidak valid
         if "API key not valid" in str(e) or "400 Bad Request" in str(e):
              st.error("Kesalahan Kunci API: Pastikan API Key Gemini Anda benar dan aktif.")
         else:
@@ -199,12 +241,11 @@ def check_login():
     return True
 
 def setup_sidebar():
-    """Menampilkan Laporan Sesi (Fitur Invoice/Riwayat)."""
+    """Menampilkan Laporan Sesi."""
     with st.sidebar:
         st.markdown("---")
         st.header("🧾 Laporan Sesi")
-        st.info("Fitur ini menampilkan riwayat percakapan Anda.")
-
+        
         if "user_name" in st.session_state:
             st.success(f"Sesi Aktif: **{st.session_state.user_name}**")
             st.caption(f"Waktu Mulai: {st.session_state.session_start.strftime('%d-%m-%Y %H:%M:%S')}")
@@ -213,19 +254,16 @@ def setup_sidebar():
             st.markdown("---")
             st.subheader("Detail Riwayat")
 
-            # Tampilan Riwayat yang Profesional
             with st.expander("Klik untuk melihat riwayat lengkap"):
                 if st.session_state.chat_history:
                     for item in reversed(st.session_state.chat_history):
                         st.markdown(f"**[{item['time']}] Anda:** *{item['user']}*")
                         st.caption(f"**Jawab:** {item['bot'][:80]}...")
-                        # KOREKSI PENTING: Menghapus divider='gray'
                         st.markdown("---") 
                 else:
                     st.info("Mulai percakapan untuk melihat riwayat.")
 
             st.markdown("---")
-            # Fitur Profesional Tambahan: Tombol Akhiri Sesi
             if st.button("Akhiri Sesi dan Logout", use_container_width=True):
                 st.toast(f"Sesi {st.session_state.user_name} diakhiri.")
                 st.session_state.clear()
@@ -256,12 +294,10 @@ if __name__ == "__main__":
 
     # Logika input pengguna
     if prompt := st.chat_input(f"Halo {st.session_state.user_name}, tanyakan sesuatu tentang Alkitab..."):
-        # Tambahkan pesan pengguna ke riwayat tampil
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        # Mendapatkan dan menampilkan respons bot
         with st.chat_message("assistant"):
             with st.spinner("Mencari Firman Tuhan..."):
                 full_response = generate_response(prompt)
