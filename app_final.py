@@ -18,7 +18,7 @@ DATA_FILE = "Alkitab.csv" # Pastikan file ini ada di folder yang sama
 
 # --- 1. SETUP TAMPILAN PROFESIONAL DAN TRENDY ---
 st.set_page_config(
-    page_title="Mighty to Save",
+    page_title="God Creation",
     page_icon="📖",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -57,7 +57,7 @@ st.markdown(
     }
     </style>
     <div class='title-text'>Mighty to Save 🕊️</div>
-    <h5 style='text-align: center; color: #4682B4;'>— Pendamping Firman Anda Berdasarkan Alkitab AYT —</h5>
+    <h5 style='text-align: center; color: #4682B4;'>— Pendamping Firman Anda Berdasarkan Ayat Alkitab —</h5>
     """,
     unsafe_allow_html=True
 )
@@ -304,3 +304,4 @@ if __name__ == "__main__":
 
             st.markdown(full_response)
             st.session_state.messages.append({"role": "assistant", "content": full_response})
+
