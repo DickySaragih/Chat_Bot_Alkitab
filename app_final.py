@@ -19,7 +19,7 @@ USER_LOG_FILE = "user_log.csv" # File Baru untuk menyimpan nama pendaftar
 
 # --- 1. SETUP TAMPILAN PROFESIONAL DAN TRENDY ---
 st.set_page_config(
-    page_title="Mighty to Save",
+    page_title="GOD REMIND YOU🕊️❤️",
     page_icon="📖",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -57,7 +57,7 @@ st.markdown(
         font-style: italic;
     }
     </style>
-    <div class='title-text'>Mighty to Save 🕊️</div>
+    <div class='title-text'>GOD REMIND YOU🕊️❤️</div>
     <h5 style='text-align: center; color: #4682B4;'>— Pendamping Firman Anda Berdasarkan Alkitab AYT —</h5>
     """,
     unsafe_allow_html=True
@@ -316,3 +316,4 @@ if __name__ == "__main__":
                 full_response = generate_response(prompt)
             st.markdown(full_response)
             st.session_state.messages.append({"role": "assistant", "content": full_response})
+
