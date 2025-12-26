@@ -17,7 +17,7 @@ LLM_MODEL = "gemini-2.5-flash"
 DATA_FILE = "Alkitab.csv"      # File Data Utama
 USER_LOG_FILE = "user_log.csv" # File Baru untuk menyimpan nama pendaftar
 
-# --- 1. SETUP TAMPILAN MODERN DAN TRENDY ---
+# --- 1. SETUP TAMPILAN MODERN DAN TRENDY DENGAN MODE GELAP ---
 st.set_page_config(
     page_title="GOD REMIND YOU🕊️❤️",
     page_icon="📖",
@@ -25,26 +25,26 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# CSS Modern dan Trendy
+# CSS Modern, Trendy, dan Mode Gelap
 st.markdown(
     """
     <style>
-    /* Global Styles */
+    /* Global Styles - Mode Gelap */
     body {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: #333;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        color: #e0e0e0;
     }
     
     /* Header Styling */
     .header-container {
         text-align: center;
         padding: 20px;
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(0, 0, 0, 0.3);
         border-radius: 15px;
         margin-bottom: 20px;
         backdrop-filter: blur(10px);
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
     }
     .title-text {
         font-size: 3.5em;
@@ -59,16 +59,16 @@ st.markdown(
     }
     .subtitle {
         font-size: 1.2em;
-        color: #e0e0e0;
+        color: #b0b0b0;
         margin-top: 10px;
     }
     
     /* Chat Container */
     .chat-container {
-        background: rgba(255, 255, 255, 0.95);
+        background: rgba(0, 0, 0, 0.2);
         border-radius: 15px;
         padding: 20px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         max-height: 70vh;
         overflow-y: auto;
     }
@@ -80,7 +80,7 @@ st.markdown(
         padding: 15px;
         border-radius: 20px 20px 5px 20px;
         margin: 10px 0;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         animation: slideIn 0.5s ease-out;
     }
     .bot-message {
@@ -89,7 +89,7 @@ st.markdown(
         padding: 15px;
         border-radius: 20px 20px 20px 5px;
         margin: 10px 0;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         animation: slideIn 0.5s ease-out;
     }
     @keyframes slideIn {
@@ -99,13 +99,13 @@ st.markdown(
     
     /* Sidebar Styling */
     [data-testid="stSidebar"] {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        color: #e0e0e0;
     }
     .sidebar-header {
         text-align: center;
         padding: 10px;
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(0, 0, 0, 0.3);
         border-radius: 10px;
         margin-bottom: 20px;
     }
@@ -119,11 +119,11 @@ st.markdown(
         padding: 10px 20px;
         font-weight: bold;
         transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     }
     .stButton>button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
     }
     
     /* Input Styling */
@@ -131,6 +131,8 @@ st.markdown(
         border-radius: 25px;
         border: 2px solid #667eea;
         padding: 10px 15px;
+        background: rgba(0, 0, 0, 0.2);
+        color: #e0e0e0;
         transition: all 0.3s ease;
     }
     .stTextInput>div>div>input:focus {
@@ -140,25 +142,34 @@ st.markdown(
     
     /* Metric Styling */
     .metric-container {
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(0, 0, 0, 0.3);
         border-radius: 10px;
         padding: 10px;
         margin: 10px 0;
         text-align: center;
+        color: #e0e0e0;
     }
     
     /* Expander Styling */
     .streamlit-expanderHeader {
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(0, 0, 0, 0.3);
         border-radius: 10px;
-        color: white;
+        color: #e0e0e0;
     }
     
     /* Dataframe Styling */
     .dataframe {
-        background: rgba(255, 255, 255, 0.9);
+        background: rgba(0, 0, 0, 0.2);
         border-radius: 10px;
         overflow: hidden;
+        color: #e0e0e0;
+    }
+    
+    /* Error dan Info Styling */
+    .stAlert {
+        background: rgba(0, 0, 0, 0.3);
+        color: #e0e0e0;
+        border-radius: 10px;
     }
     </style>
     """,
@@ -170,7 +181,7 @@ st.markdown(
     """
     <div class="header-container">
         <div class="title-text">GOD REMIND YOU🕊️❤️</div>
-        <div class="subtitle">— Your Modern Biblical Companion Powered by AI —</div>
+        <div class="subtitle">— Pendamping Alkitab Modern Anda yang Didukung AI —</div>
     </div>
     """,
     unsafe_allow_html=True
@@ -180,12 +191,12 @@ st.markdown(
 # B. FUNGSI LOGIKA RAG (Indexing, Hanya Berjalan Sekali)
 # ====================================================================
 
-@st.cache_resource(show_spinner="🔄 Loading Divine Wisdom... (This happens only once)")
+@st.cache_resource(show_spinner="🔄 Memuat Hikmat Ilahi... (Ini hanya terjadi sekali)")
 def load_and_index_data():
     """Memuat data CSV, membuat LLM, Embeddings, dan Index RAG."""
 
     if not API_KEY_ANDA:
-        st.error("❌ API Key Error: Please set GEMINI_API_KEY in your environment variables.")
+        st.error("❌ Kesalahan Kunci API: Silakan setel GEMINI_API_KEY di variabel lingkungan Anda.")
         return None, None
 
     try:
@@ -218,7 +229,7 @@ def load_and_index_data():
         return index, llm
 
     except Exception as e:
-        st.error(f"❌ Initialization Error: {e}")
+        st.error(f"❌ Kesalahan Inisialisasi: {e}")
         return None, None
 
 INDEX, LLM = load_and_index_data()
@@ -232,25 +243,25 @@ def get_query_engine():
         return None
 
     custom_qa_template = PromptTemplate(
-        """You are 'Divine Companion', a wise Biblical chatbot.
+        """Anda adalah 'Pendamping Ilahi', chatbot Alkitab yang bijaksana.
         
-        Task: Answer questions based on the provided Biblical context.
+        Tugas: Jawab pertanyaan berdasarkan konteks Alkitab yang disediakan.
         
-        RESPONSE FORMAT RULES (IMPORTANT):
-        1. NEVER mention "Kitab 10" or "Kitab 19". Use original book names (e.g., Genesis, Psalms).
-        2. If relevant verses are found, QUOTE THEM FULLY.
-        3. Use this Markdown format for beautiful display:
-           - For Verse References, use blue bold. Example: **:blue[Genesis 1:1]**
-           - For Verse Content, use blockquote. Example: > "In the beginning..."
-           - For Explanations, use friendly plain text.
+        ATURAN FORMAT JAWABAN (PENTING):
+        1. JANGAN PERNAH sebutkan "Kitab 10" atau "Kitab 19". Gunakan nama kitab asli (misal: Kejadian, Mazmur).
+        2. Jika menemukan ayat yang relevan, KUTIP AYAT TERSEBUT SECARA LENGKAP.
+        3. Gunakan format Markdown ini untuk tampilan indah:
+           - Untuk Referensi Ayat, gunakan biru tebal. Contoh: **:blue[Kejadian 1:1]**
+           - Untuk Isi Ayat, gunakan blockquote. Contoh: > "Pada mulanya..."
+           - Untuk Penjelasan, gunakan teks biasa yang ramah.
         
-        Biblical Context:
+        Konteks Alkitab:
         {context_str}
 
-        User Question:
+        Pertanyaan Pengguna:
         {query_str}
 
-        Your Answer:"""
+        Jawaban Anda:"""
     )
 
     return INDEX.as_query_engine(
@@ -262,7 +273,7 @@ def get_query_engine():
 def generate_response(query):
     query_engine = get_query_engine()
     if query_engine is None:
-        return "System not ready. Please check API key."
+        return "Sistem belum siap. Silakan periksa kunci API."
 
     try:
         response = query_engine.query(query)
@@ -276,8 +287,8 @@ def generate_response(query):
 
         return bot_response_text
     except Exception as e:
-        st.error(f"Error: {e}")
-        return "Sorry, a technical issue occurred while seeking answers."
+        st.error(f"Kesalahan: {e}")
+        return "Maaf, terjadi masalah teknis saat mencari jawaban."
 
 # ====================================================================
 # D. LOGIKA PENYIMPANAN PENGGUNA (BUKU TAMU)
@@ -287,90 +298,90 @@ def log_user_to_csv(username):
     """Menyimpan nama pengguna baru ke file CSV."""
     try:
         if not os.path.exists(USER_LOG_FILE):
-            df = pd.DataFrame(columns=['Username', 'Join Time'])
+            df = pd.DataFrame(columns=['Nama Pengguna', 'Waktu Bergabung'])
             df.to_csv(USER_LOG_FILE, index=False)
         
         df = pd.read_csv(USER_LOG_FILE)
         
-        if username not in df['Username'].values:
+        if username not in df['Nama Pengguna'].values:
             new_row = pd.DataFrame({
-                'Username': [username],
-                'Join Time': [datetime.now().strftime('%Y-%m-%d %H:%M:%S')]
+                'Nama Pengguna': [username],
+                'Waktu Bergabung': [datetime.now().strftime('%Y-%m-%d %H:%M:%S')]
             })
             df = pd.concat([df, new_row], ignore_index=True)
             df.to_csv(USER_LOG_FILE, index=False)
             
     except Exception as e:
-        st.error(f"Failed to log user: {e}")
+        st.error(f"Gagal mencatat pengguna: {e}")
 
 # ====================================================================
 # E. TAMPILAN UI (Login, Sidebar, Chat)
 # ====================================================================
 
 def check_login():
-    """Modern login form in sidebar."""
+    """Form login modern di sidebar."""
     if "user_name" not in st.session_state or not st.session_state.user_name:
         with st.sidebar:
-            st.markdown('<div class="sidebar-header"><h3>👋 Welcome Aboard</h3></div>', unsafe_allow_html=True)
-            st.info("Enter your name to start your divine journey.")
+            st.markdown('<div class="sidebar-header"><h3>👋 Selamat Datang</h3></div>', unsafe_allow_html=True)
+            st.info("Masukkan nama Anda untuk memulai perjalanan ilahi.")
 
-            user_input = st.text_input("Username (Required)", key="login_input", placeholder="e.g., John Doe")
+            user_input = st.text_input("Nama Pengguna (Wajib)", key="login_input", placeholder="misalnya: John Doe")
 
-            if st.button("🚀 Start Session", use_container_width=True):
+            if st.button("🚀 Mulai Sesi", use_container_width=True):
                 if user_input.strip():
                     st.session_state.user_name = user_input.strip()
                     st.session_state.chat_history = []
                     st.session_state.session_start = datetime.now()
-                    st.session_state.messages = [{"role": "assistant", "content": f"✨ Hello {st.session_state.user_name}! I'm your Divine Companion. What biblical wisdom can I share with you today?"}]
+                    st.session_state.messages = [{"role": "assistant", "content": f"✨ Halo {st.session_state.user_name}! Saya Pendamping Ilahi Anda. Hikmat Alkitab apa yang bisa saya bagikan hari ini?"}]
                     
                     log_user_to_csv(st.session_state.user_name)
                     
                     st.rerun()
                 else:
-                    st.warning("Username cannot be empty.")
+                    st.warning("Nama pengguna tidak boleh kosong.")
             return False
     return True
 
 def setup_sidebar():
-    """Modern sidebar with session report and user registry."""
+    """Sidebar modern dengan laporan sesi dan registry pengguna."""
     with st.sidebar:
-        st.markdown('<div class="sidebar-header"><h4>📊 Session Dashboard</h4></div>', unsafe_allow_html=True)
+        st.markdown('<div class="sidebar-header"><h4>📊 Dasbor Sesi</h4></div>', unsafe_allow_html=True)
         
         if "user_name" in st.session_state:
-            st.success(f"Active: **{st.session_state.user_name}**")
+            st.success(f"Aktif: **{st.session_state.user_name}**")
             
             col1, col2 = st.columns(2)
             with col1:
-                st.metric("Questions Asked", len(st.session_state.chat_history))
+                st.metric("Pertanyaan Diajukan", len(st.session_state.chat_history))
             with col2:
-                st.metric("Session Time", f"{(datetime.now() - st.session_state.session_start).seconds // 60}m")
+                st.metric("Waktu Sesi", f"{(datetime.now() - st.session_state.session_start).seconds // 60}m")
 
-            with st.expander("📜 Chat History"):
+            with st.expander("📜 Riwayat Obrolan"):
                 if st.session_state.chat_history:
                     for item in reversed(st.session_state.chat_history):
-                        st.markdown(f"**[{item['time']}] You:** {item['user']}")
+                        st.markdown(f"**[{item['time']}] Anda:** {item['user']}")
                         st.caption(f"**Bot:** {item['bot'][:100]}...")
                 else:
-                    st.info("Start chatting to see history!")
+                    st.info("Mulai mengobrol untuk melihat riwayat!")
 
             st.markdown("---")
-            st.subheader("📖 User Registry")
+            st.subheader("📖 Registry Pengguna")
             try:
                 if os.path.exists(USER_LOG_FILE):
                     df_users = pd.read_csv(USER_LOG_FILE)
                     st.dataframe(df_users, hide_index=True, use_container_width=True)
                 else:
-                    st.info("No users registered yet.")
+                    st.info("Belum ada pengguna yang terdaftar.")
             except Exception:
-                st.caption("Failed to load registry.")
+                st.caption("Gagal memuat registry.")
 
-            if st.button("🔚 End Session", use_container_width=True):
-                st.toast(f"Session ended for {st.session_state.user_name}.")
+            if st.button("🔚 Akhiri Sesi", use_container_width=True):
+                st.toast(f"Sesi diakhiri untuk {st.session_state.user_name}.")
                 st.session_state.clear()
                 st.rerun()
 
 # ====================================================================
-# F. MAIN EXECUTION
+# F. EKSEKUSI UTAMA
 # ====================================================================
 
 if __name__ == "__main__":
@@ -379,7 +390,7 @@ if __name__ == "__main__":
 
     setup_sidebar()
 
-    # Chat Container
+    # Kontainer Obrolan
     st.markdown('<div class="chat-container">', unsafe_allow_html=True)
     
     if "messages" not in st.session_state:
@@ -393,14 +404,14 @@ if __name__ == "__main__":
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-    if prompt := st.chat_input(f"💬 Ask about the Bible, {st.session_state.user_name}..."):
+    if prompt := st.chat_input(f"💬 Tanyakan tentang Alkitab, {st.session_state.user_name}..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         
-        # Add user message to chat
+        # Tambahkan pesan pengguna ke obrolan
         st.markdown('<div class="chat-container">', unsafe_allow_html=True)
         st.markdown(f'<div class="user-message">👤 {prompt}</div>', unsafe_allow_html=True)
         
-        with st.spinner("🔍 Seeking divine wisdom..."):
+        with st.spinner("🔍 Mencari hikmat ilahi..."):
             full_response = generate_response(prompt)
         
         st.markdown(f'<div class="bot-message">🤖 {full_response}</div>', unsafe_allow_html=True)
@@ -408,6 +419,6 @@ if __name__ == "__main__":
         
         st.session_state.messages.append({"role": "assistant", "content": full_response})
         
-        # Auto-scroll to bottom (using rerun for simplicity)
+        # Auto-scroll ke bawah (menggunakan rerun untuk kesederhanaan)
         time.sleep(0.1)
         st.rerun()
