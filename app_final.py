@@ -3,9 +3,9 @@ import os
 import pandas as pd
 from llama_index.core import VectorStoreIndex, PromptTemplate, Document
 from llama_index.llms.google_genai import GoogleGenAI
-# Kode di bawah ini MENGHINDARI konflik HuggingFace/CodeCarbon:
 from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
 from datetime import datetime
+import time
 
 # ====================================================================
 # A. KONFIGURASI APLIKASI DAN PENGAMANAN
@@ -17,7 +17,7 @@ LLM_MODEL = "gemini-2.5-flash"
 DATA_FILE = "Alkitab.csv"      # File Data Utama
 USER_LOG_FILE = "user_log.csv" # File Baru untuk menyimpan nama pendaftar
 
-# --- 1. SETUP TAMPILAN PROFESIONAL DAN TRENDY ---
+# --- 1. SETUP TAMPILAN MODERN DAN TRENDY ---
 st.set_page_config(
     page_title="GOD REMIND YOU🕊️❤️",
     page_icon="📖",
@@ -25,40 +25,153 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Judul Utama Aplikasi (Tampilan Trendy dan Elegan)
+# CSS Modern dan Trendy
 st.markdown(
     """
     <style>
-    /* Styling Judul Besar */
-    .title-text {
-        font-size: 3em;
-        font-weight: 700;
-        color: #FFFFFF;
+    /* Global Styles */
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #333;
+    }
+    
+    /* Header Styling */
+    .header-container {
         text-align: center;
-        padding-top: 10px;
-        padding-bottom: 5px;
-        text-shadow: 2px 2px 5px #4682B4;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        margin-bottom: 20px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
     }
-    /* Mengubah warna background chat area */
-    [data-testid="stAppViewContainer"] {
-        background-color: #F8F8FF;
+    .title-text {
+        font-size: 3.5em;
+        font-weight: 800;
+        color: #fff;
+        text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        animation: glow 2s ease-in-out infinite alternate;
     }
-    /* Warna sidebar */
+    @keyframes glow {
+        from { text-shadow: 0 0 20px rgba(255, 255, 255, 0.5); }
+        to { text-shadow: 0 0 30px rgba(255, 255, 255, 0.8); }
+    }
+    .subtitle {
+        font-size: 1.2em;
+        color: #e0e0e0;
+        margin-top: 10px;
+    }
+    
+    /* Chat Container */
+    .chat-container {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+    
+    /* Message Styling */
+    .user-message {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 15px;
+        border-radius: 20px 20px 5px 20px;
+        margin: 10px 0;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        animation: slideIn 0.5s ease-out;
+    }
+    .bot-message {
+        background: linear-gradient(135deg, #f093fb, #f5576c);
+        color: white;
+        padding: 15px;
+        border-radius: 20px 20px 20px 5px;
+        margin: 10px 0;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        animation: slideIn 0.5s ease-out;
+    }
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Sidebar Styling */
     [data-testid="stSidebar"] {
-        background-color: #E6E6FA;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
     }
-    /* Custom style untuk highlight */
-    .highlight-verse {
-        background-color: #e6f3ff;
-        border-left: 5px solid #4682B4;
+    .sidebar-header {
+        text-align: center;
         padding: 10px;
-        margin: 5px 0;
-        border-radius: 5px;
-        font-style: italic;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    
+    /* Button Styling */
+    .stButton>button {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        border: none;
+        border-radius: 25px;
+        padding: 10px 20px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+    
+    /* Input Styling */
+    .stTextInput>div>div>input {
+        border-radius: 25px;
+        border: 2px solid #667eea;
+        padding: 10px 15px;
+        transition: all 0.3s ease;
+    }
+    .stTextInput>div>div>input:focus {
+        border-color: #764ba2;
+        box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+    }
+    
+    /* Metric Styling */
+    .metric-container {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 10px;
+        margin: 10px 0;
+        text-align: center;
+    }
+    
+    /* Expander Styling */
+    .streamlit-expanderHeader {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        color: white;
+    }
+    
+    /* Dataframe Styling */
+    .dataframe {
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 10px;
+        overflow: hidden;
     }
     </style>
-    <div class='title-text'>GOD REMIND YOU🕊️❤️</div>
-    <h5 style='text-align: center; color: #4682B4;'>— Pendamping Firman Anda Berdasarkan Alkitab AYT —</h5>
+    """,
+    unsafe_allow_html=True
+)
+
+# Header Modern
+st.markdown(
+    """
+    <div class="header-container">
+        <div class="title-text">GOD REMIND YOU🕊️❤️</div>
+        <div class="subtitle">— Your Modern Biblical Companion Powered by AI —</div>
+    </div>
     """,
     unsafe_allow_html=True
 )
@@ -67,26 +180,22 @@ st.markdown(
 # B. FUNGSI LOGIKA RAG (Indexing, Hanya Berjalan Sekali)
 # ====================================================================
 
-@st.cache_resource(show_spinner="Memuat dan mengindeks Firman Tuhan (Ini hanya terjadi sekali)...")
+@st.cache_resource(show_spinner="🔄 Loading Divine Wisdom... (This happens only once)")
 def load_and_index_data():
     """Memuat data CSV, membuat LLM, Embeddings, dan Index RAG."""
 
     if not API_KEY_ANDA:
-        st.error("❌ ERROR: Kunci API Gemini tidak ditemukan di variabel lingkungan 'GEMINI_API_KEY'.")
-        st.info("Mohon setel variabel lingkungan 'GEMINI_API_KEY' di CMD atau sistem Anda.")
+        st.error("❌ API Key Error: Please set GEMINI_API_KEY in your environment variables.")
         return None, None
 
     try:
-        # Pemuatan dan Pemrosesan Data CSV
         df = pd.read_csv(DATA_FILE)
         
-        # Membersihkan teks
         if 'Isi' in df.columns:
             df['text_bersih'] = df['Isi'].astype(str).str.replace('<t/>', '', regex=False)
         else:
             df['text_bersih'] = df['text'].astype(str)
 
-        # Membuat Referensi Lengkap
         df['referensi'] = df['Nama ayat'].astype(str) + ' ' + df['Bagian'].astype(str) + ':' + df['Ayat'].astype(str)
         
         documents = [
@@ -108,14 +217,8 @@ def load_and_index_data():
         index = VectorStoreIndex.from_documents(documents, llm=llm, embed_model=embed_model)
         return index, llm
 
-    except KeyError as e:
-        st.error(f"❌ ERROR: Nama kolom CSV tidak sesuai. Detail: {e}")
-        return None, None
-    except FileNotFoundError:
-        st.error(f"❌ ERROR: File data '{DATA_FILE}' tidak ditemukan.")
-        return None, None
     except Exception as e:
-        st.error(f"❌ ERROR saat inisialisasi RAG: {e}")
+        st.error(f"❌ Initialization Error: {e}")
         return None, None
 
 INDEX, LLM = load_and_index_data()
@@ -129,25 +232,25 @@ def get_query_engine():
         return None
 
     custom_qa_template = PromptTemplate(
-        """Anda adalah 'Pendamping Firman', Chatbot Alkitab yang bijaksana.
+        """You are 'Divine Companion', a wise Biblical chatbot.
         
-        Tugas Anda: Menjawab pertanyaan berdasarkan konteks Alkitab di bawah ini.
+        Task: Answer questions based on the provided Biblical context.
         
-        ATURAN FORMAT JAWABAN (PENTING):
-        1. JANGAN PERNAH menyebutkan "Kitab 10" atau "Kitab 19". Gunakan nama kitab asli (misal: Kejadian, Mazmur).
-        2. Jika menemukan ayat yang relevan, KUTIP AYAT TERSEBUT SECARA LENGKAP.
-        3. Gunakan format Markdown ini agar tampilan indah:
-           - Untuk Referensi Ayat, gunakan warna biru/bold. Contoh: **:blue[Kejadian 1:1]**
-           - Untuk Isi Ayat, gunakan format kutipan (blockquote). Contoh: > "Pada mulanya..."
-           - Untuk Penjelasan, gunakan teks biasa yang ramah.
+        RESPONSE FORMAT RULES (IMPORTANT):
+        1. NEVER mention "Kitab 10" or "Kitab 19". Use original book names (e.g., Genesis, Psalms).
+        2. If relevant verses are found, QUOTE THEM FULLY.
+        3. Use this Markdown format for beautiful display:
+           - For Verse References, use blue bold. Example: **:blue[Genesis 1:1]**
+           - For Verse Content, use blockquote. Example: > "In the beginning..."
+           - For Explanations, use friendly plain text.
         
-        Berikut adalah konteks informasi Alkitab:
+        Biblical Context:
         {context_str}
 
-        Pertanyaan pengguna:
+        User Question:
         {query_str}
 
-        Jawaban Anda:"""
+        Your Answer:"""
     )
 
     return INDEX.as_query_engine(
@@ -159,7 +262,7 @@ def get_query_engine():
 def generate_response(query):
     query_engine = get_query_engine()
     if query_engine is None:
-        return "Sistem RAG belum siap."
+        return "System not ready. Please check API key."
 
     try:
         response = query_engine.query(query)
@@ -173,12 +276,8 @@ def generate_response(query):
 
         return bot_response_text
     except Exception as e:
-        if "API key not valid" in str(e):
-             st.error("Kesalahan Kunci API.")
-        else:
-             st.error(f"Terjadi kesalahan: {e}")
-        return "Maaf, terjadi masalah teknis saat mencari jawaban."
-
+        st.error(f"Error: {e}")
+        return "Sorry, a technical issue occurred while seeking answers."
 
 # ====================================================================
 # D. LOGIKA PENYIMPANAN PENGGUNA (BUKU TAMU)
@@ -187,105 +286,86 @@ def generate_response(query):
 def log_user_to_csv(username):
     """Menyimpan nama pengguna baru ke file CSV."""
     try:
-        # Cek apakah file sudah ada
         if not os.path.exists(USER_LOG_FILE):
-            # Buat file baru dengan header
-            df = pd.DataFrame(columns=['Nama Pengguna', 'Waktu Bergabung'])
+            df = pd.DataFrame(columns=['Username', 'Join Time'])
             df.to_csv(USER_LOG_FILE, index=False)
         
-        # Baca file yang ada
         df = pd.read_csv(USER_LOG_FILE)
         
-        # Cek apakah user sudah ada (agar tidak duplikat)
-        if username not in df['Nama Pengguna'].values:
+        if username not in df['Username'].values:
             new_row = pd.DataFrame({
-                'Nama Pengguna': [username],
-                'Waktu Bergabung': [datetime.now().strftime('%Y-%m-%d %H:%M:%S')]
+                'Username': [username],
+                'Join Time': [datetime.now().strftime('%Y-%m-%d %H:%M:%S')]
             })
-            # Gabungkan dan simpan
             df = pd.concat([df, new_row], ignore_index=True)
             df.to_csv(USER_LOG_FILE, index=False)
             
     except Exception as e:
-        print(f"Gagal menyimpan log user: {e}")
+        st.error(f"Failed to log user: {e}")
 
 # ====================================================================
 # E. TAMPILAN UI (Login, Sidebar, Chat)
 # ====================================================================
 
 def check_login():
-    """Simulasi form login di sidebar."""
+    """Modern login form in sidebar."""
     if "user_name" not in st.session_state or not st.session_state.user_name:
         with st.sidebar:
-            st.header("👋 Autentikasi Sesi")
-            st.info("Masukkan nama Anda untuk memulai Pendamping Firman.")
+            st.markdown('<div class="sidebar-header"><h3>👋 Welcome Aboard</h3></div>', unsafe_allow_html=True)
+            st.info("Enter your name to start your divine journey.")
 
-            user_input = st.text_input("Nama Pengguna (Wajib)", key="login_input")
+            user_input = st.text_input("Username (Required)", key="login_input", placeholder="e.g., John Doe")
 
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("Masuk dan Mulai Sesi", use_container_width=True):
-                    if user_input:
-                        # 1. Simpan ke Session State
-                        st.session_state.user_name = user_input.strip()
-                        st.session_state.chat_history = []
-                        st.session_state.session_start = datetime.now()
-                        st.session_state.messages = [{"role": "assistant", "content": f"Halo {st.session_state.user_name}! Saya Pendamping Firman. Apa yang bisa saya bantu hari ini terkait Firman Tuhan?"}]
-                        
-                        # 2. CATAT KE BUKU TAMU (CSV)
-                        log_user_to_csv(st.session_state.user_name)
-                        
-                        st.rerun()
-                    else:
-                        st.warning("Nama pengguna tidak boleh kosong.")
+            if st.button("🚀 Start Session", use_container_width=True):
+                if user_input.strip():
+                    st.session_state.user_name = user_input.strip()
+                    st.session_state.chat_history = []
+                    st.session_state.session_start = datetime.now()
+                    st.session_state.messages = [{"role": "assistant", "content": f"✨ Hello {st.session_state.user_name}! I'm your Divine Companion. What biblical wisdom can I share with you today?"}]
+                    
+                    log_user_to_csv(st.session_state.user_name)
+                    
+                    st.rerun()
+                else:
+                    st.warning("Username cannot be empty.")
             return False
     return True
 
 def setup_sidebar():
-    """Menampilkan Laporan Sesi dan Buku Tamu."""
+    """Modern sidebar with session report and user registry."""
     with st.sidebar:
-        st.markdown("---")
-        st.header("🧾 Laporan Pribadi")
+        st.markdown('<div class="sidebar-header"><h4>📊 Session Dashboard</h4></div>', unsafe_allow_html=True)
         
         if "user_name" in st.session_state:
-            st.success(f"Sesi Aktif: **{st.session_state.user_name}**")
-            st.metric("Jumlah Pertanyaan", len(st.session_state.chat_history))
+            st.success(f"Active: **{st.session_state.user_name}**")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Questions Asked", len(st.session_state.chat_history))
+            with col2:
+                st.metric("Session Time", f"{(datetime.now() - st.session_state.session_start).seconds // 60}m")
 
-            st.markdown("---")
-            st.subheader("Detail Riwayat")
-
-            with st.expander("Klik untuk melihat riwayat lengkap"):
+            with st.expander("📜 Chat History"):
                 if st.session_state.chat_history:
                     for item in reversed(st.session_state.chat_history):
-                        st.markdown(f"**[{item['time']}] Anda:** *{item['user']}*")
-                        st.caption(f"**Jawab:** {item['bot'][:80]}...")
-                        st.markdown("---") 
+                        st.markdown(f"**[{item['time']}] You:** {item['user']}")
+                        st.caption(f"**Bot:** {item['bot'][:100]}...")
                 else:
-                    st.info("Mulai percakapan untuk melihat riwayat.")
+                    st.info("Start chatting to see history!")
 
-            # --- FITUR BARU: BUKU TAMU (INVOICE DAFTAR PENGGUNA) ---
             st.markdown("---")
-            st.header("📒 Buku Daftar Pengguna")
-            st.caption("Daftar orang yang telah menggunakan aplikasi ini:")
-            
+            st.subheader("📖 User Registry")
             try:
                 if os.path.exists(USER_LOG_FILE):
                     df_users = pd.read_csv(USER_LOG_FILE)
-                    # Tampilkan sebagai tabel interaktif
-                    st.dataframe(
-                        df_users, 
-                        hide_index=True,
-                        use_container_width=True
-                    )
+                    st.dataframe(df_users, hide_index=True, use_container_width=True)
                 else:
-                    st.info("Belum ada data pengguna tersimpan.")
+                    st.info("No users registered yet.")
             except Exception:
-                st.caption("Gagal memuat daftar pengguna.")
-            # -------------------------------------------------------
+                st.caption("Failed to load registry.")
 
-            st.markdown("---")
-            if st.button("Akhiri Sesi dan Logout", use_container_width=True):
-                st.toast(f"Sesi {st.session_state.user_name} diakhiri.")
+            if st.button("🔚 End Session", use_container_width=True):
+                st.toast(f"Session ended for {st.session_state.user_name}.")
                 st.session_state.clear()
                 st.rerun()
 
@@ -299,21 +379,35 @@ if __name__ == "__main__":
 
     setup_sidebar()
 
+    # Chat Container
+    st.markdown('<div class="chat-container">', unsafe_allow_html=True)
+    
     if "messages" not in st.session_state:
         pass
 
     for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+        if message["role"] == "user":
+            st.markdown(f'<div class="user-message">👤 {message["content"]}</div>', unsafe_allow_html=True)
+        else:
+            st.markdown(f'<div class="bot-message">🤖 {message["content"]}</div>', unsafe_allow_html=True)
 
-    if prompt := st.chat_input(f"Halo {st.session_state.user_name}, tanyakan sesuatu tentang Alkitab..."):
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    if prompt := st.chat_input(f"💬 Ask about the Bible, {st.session_state.user_name}..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
-
-        with st.chat_message("assistant"):
-            with st.spinner("Mencari Firman Tuhan..."):
-                full_response = generate_response(prompt)
-            st.markdown(full_response)
-            st.session_state.messages.append({"role": "assistant", "content": full_response})
-
+        
+        # Add user message to chat
+        st.markdown('<div class="chat-container">', unsafe_allow_html=True)
+        st.markdown(f'<div class="user-message">👤 {prompt}</div>', unsafe_allow_html=True)
+        
+        with st.spinner("🔍 Seeking divine wisdom..."):
+            full_response = generate_response(prompt)
+        
+        st.markdown(f'<div class="bot-message">🤖 {full_response}</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        st.session_state.messages.append({"role": "assistant", "content": full_response})
+        
+        # Auto-scroll to bottom (using rerun for simplicity)
+        time.sleep(0.1)
+        st.rerun()
