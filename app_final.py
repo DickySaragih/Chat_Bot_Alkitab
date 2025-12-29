@@ -3,9 +3,6 @@ import os
 import pandas as pd
 import random
 from datetime import datetime
-import time
-
-# Import LlamaIndex & Gemini
 from llama_index.core import VectorStoreIndex, Document, Settings
 from llama_index.llms.google_genai import GoogleGenAI
 from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
@@ -14,13 +11,13 @@ from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
 # 1. KONFIGURASI HALAMAN & API
 # ====================================================================
 
-# Pastikan API Key ada di environment variable atau set langsung di sini (tidak disarankan untuk production)
-# os.environ["GEMINI_API_KEY"] = "MASUKKAN_KEY_ANDA_DISINI" 
+# Set API Key Anda di sini
+# os.environ["GEMINI_API_KEY"] = "MASUKKAN_KEY_ANDA"
 API_KEY_ANDA = os.environ.get("GEMINI_API_KEY")
 
 st.set_page_config(
     page_title="Alpha & Omega Chat",
-    page_icon="🕊️",
+    page_icon="🦉",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -30,202 +27,189 @@ DATA_FILE = "Alkitab.csv"
 USER_LOG_FILE = "user_log.csv"
 
 # ====================================================================
-# 2. CSS MODERN (GLASSMORPHISM & NEON) - MENIRU GAMBAR REFERENSI
+# 2. CSS "SINGLE BOX" & GLASSMORPHISM (Sangat Detail)
 # ====================================================================
 
 st.markdown("""
 <style>
-    /* IMPORT FONT KEREN */
-    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Poppins:wght@300;600&display=swap');
-
-    /* BACKGROUND UTAMA (Sunset/Cosmic Gradient) */
+    /* 1. RESET & BACKGROUND UTAMA */
     .stApp {
-        background: linear-gradient(135deg, #1c1c3c 0%, #2e2e4d 50%, #4a3b52 100%);
-        font-family: 'Poppins', sans-serif;
-        color: white;
-    }
-
-    /* HEADER TEXT */
-    .header-title {
-        font-family: 'Montserrat', sans-serif;
-        font-weight: 800;
-        font-size: 42px;
-        background: linear-gradient(to right, #f1c40f, #f39c12);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        text-shadow: 0px 0px 20px rgba(241, 196, 15, 0.3);
-        margin-bottom: -10px;
+        background: url("https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?q=80&w=2072&auto=format&fit=crop") no-repeat center center fixed;
+        background-size: cover;
+        font-family: 'Helvetica Neue', sans-serif;
     }
     
-    .header-subtitle {
-        font-family: 'Montserrat', sans-serif;
-        font-weight: 700;
-        font-size: 32px;
-        color: #f1c40f;
-        letter-spacing: 2px;
-        margin-bottom: 20px;
-    }
+    /* Hilangkan Header & Footer bawaan Streamlit */
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    #MainMenu {visibility: hidden;}
 
-    /* GLASS CONTAINER (PANEL UTAMA) */
-    .glass-panel {
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(20px);
+    /* 2. THE MAIN BOX (KARTU UTAMA) */
+    /* Kita membatasi lebar konten utama dan memberinya style kartu kaca */
+    .block-container {
+        max-width: 1000px;
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+        background: rgba(26, 28, 48, 0.85); /* Warna dasar gelap transparan */
+        backdrop-filter: blur(20px);         /* Efek Blur Kaca */
         -webkit-backdrop-filter: blur(20px);
         border-radius: 25px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 20px;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        margin-top: 10px;
-        height: 75vh; /* Tinggi fix agar scrollable */
+        border: 1px solid rgba(255, 255, 255, 0.2); /* Garis tepi tipis */
+        box-shadow: 0 20px 50px rgba(0,0,0,0.5);    /* Bayangan 3D */
+        margin-top: 5vh;
+        min-height: 80vh; /* Tinggi minimum agar terlihat kotak */
         position: relative;
     }
 
-    /* KOLOM KIRI: AVATAR */
-    .avatar-container {
+    /* 3. HEADER STYLING (Emas & Putih) */
+    .header-text {
+        font-size: 36px;
+        font-weight: 800;
+        color: #f1c40f; /* Warna Emas */
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 0;
+        line-height: 1;
+    }
+    .header-sub {
+        font-size: 24px;
+        font-weight: 700;
+        color: #f1c40f;
+        margin-top: 0;
+        letter-spacing: 4px;
+        margin-bottom: 20px;
+    }
+    .top-icons {
+        color: #f1c40f;
+        font-size: 24px;
+        text-align: right;
+    }
+
+    /* 4. AVATAR GLOW (Burung Hantu) */
+    .owl-container {
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         height: 100%;
-        padding-top: 50px;
+        margin-top: 40px;
     }
-    .neon-owl {
-        width: 150px;
-        filter: drop-shadow(0 0 15px #00a8ff);
-        animation: float 6s ease-in-out infinite;
+    .neon-glow-img {
+        width: 140px;
+        filter: drop-shadow(0 0 10px #6faeff) drop-shadow(0 0 20px #6faeff); /* Efek Neon Biru */
+        margin-bottom: 10px;
     }
-    @keyframes float {
-        0% { transform: translateY(0px); }
-        50% { transform: translateY(-10px); }
-        100% { transform: translateY(0px); }
-    }
-    .prophet-text {
-        margin-top: 15px;
-        font-weight: 600;
-        font-size: 18px;
+    .prophet-label {
+        color: white;
+        font-weight: bold;
         letter-spacing: 1px;
-        color: #e0e0e0;
-        text-shadow: 0 0 10px rgba(255,255,255,0.3);
+        font-size: 16px;
     }
 
-    /* KOLOM TENGAH: CHAT BUBBLES */
-    .chat-scroll-area {
-        height: 65vh;
+    /* 5. CHAT BUBBLES (Detail) */
+    .chat-area {
+        height: 50vh;
         overflow-y: auto;
-        padding-right: 10px;
-        padding-left: 10px;
+        padding: 10px;
         scrollbar-width: thin;
+        scrollbar-color: rgba(255,255,255,0.3) transparent;
     }
     
-    /* Bot Message (Putih/Abu) */
-    .bot-message {
-        background-color: #f0f2f5;
-        color: #2c3e50;
-        padding: 15px 20px;
-        border-radius: 20px 20px 20px 5px;
+    /* Bubble Bot (Putih) */
+    .bubble-bot {
+        background-color: #f5f6fa;
+        color: #2f3640;
+        padding: 12px 18px;
+        border-radius: 18px 18px 18px 4px;
         margin-bottom: 15px;
-        max-width: 85%;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        font-size: 15px;
+        max-width: 90%;
+        font-size: 14px;
         line-height: 1.5;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         position: relative;
     }
-    .bot-message::before {
-        content: '';
+    .bubble-bot::before { /* Ekor bubble kiri */
+        content: "";
         position: absolute;
-        bottom: 0; left: -10px;
-        width: 20px; height: 20px;
-        background: radial-gradient(circle at top right, transparent 50%, #f0f2f5 50%);
+        bottom: 0; left: -8px;
+        width: 15px; height: 15px;
+        background: #f5f6fa;
+        border-radius: 50%;
+        z-index: -1;
     }
 
-    /* User Message (Orange/Emas) */
-    .user-message {
-        background: linear-gradient(135deg, #f39c12 0%, #d35400 100%);
-        color: white;
-        padding: 15px 20px;
-        border-radius: 20px 20px 5px 20px;
+    /* Bubble User (Orange/Gold) */
+    .bubble-user {
+        background: linear-gradient(135deg, #f1c40f 0%, #e67e22 100%);
+        color: #fff;
+        padding: 12px 18px;
+        border-radius: 18px 18px 4px 18px;
         margin-bottom: 15px;
-        max-width: 85%;
         margin-left: auto; /* Geser ke kanan */
-        box-shadow: 0 4px 15px rgba(243, 156, 18, 0.4);
-        font-size: 15px;
-        line-height: 1.5;
-        text-align: right;
-    }
-
-    /* KOLOM KANAN: TOMBOL MENU */
-    .menu-container {
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-        padding-top: 50px;
-    }
-    
-    /* Tombol Custom (Div simulated as button for visual, actual functionality via st.button logic) */
-    div.stButton > button {
-        width: 100%;
-        border-radius: 30px;
-        padding: 12px;
-        font-weight: 600;
-        border: none;
-        transition: all 0.3s ease;
-        text-transform: none; 
+        max-width: 90%;
         font-size: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
+        text-align: right;
+        box-shadow: 0 4px 10px rgba(230, 126, 34, 0.4);
     }
 
-    /* Daily Verse Button (Blue) */
-    div.stButton > button:first-child {
-        background: linear-gradient(90deg, #3498db, #2980b9) !important;
-        color: white !important;
-        box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+    /* 6. TOMBOL MENU KANAN (Pills) */
+    .stButton button {
+        width: 100%;
+        border-radius: 50px !important;
+        border: none !important;
+        padding: 12px 20px !important;
+        font-weight: 600 !important;
+        font-size: 14px !important;
+        margin-bottom: 10px !important;
+        transition: transform 0.2s;
     }
-    
-    /* Other Buttons (Dark Glass) */
-    div.stButton > button {
-        background: rgba(0, 0, 0, 0.4);
-        color: #e0e0e0;
-        border: 1px solid rgba(255,255,255,0.1);
-    }
-    div.stButton > button:hover {
-        transform: translateY(-3px);
-        background: rgba(255, 255, 255, 0.1);
+    /* Tombol Biru (Daily Verse) */
+    div[data-testid="stVerticalBlock"] > div:nth-child(1) > div > div > div > button {
+        background: linear-gradient(90deg, #3498db, #2980b9);
         color: white;
+        box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+    }
+    /* Tombol Hitam Transparan (Lainnya) - Kita akali dengan CSS targeting */
+    .btn-dark {
+        background: rgba(0,0,0,0.5) !important;
+        color: white !important;
+        border: 1px solid rgba(255,255,255,0.2) !important;
     }
 
-    /* INPUT FIELD Customization */
+    /* 7. INPUT FIELD (Customizing Streamlit Chat Input) */
     .stChatInput {
-        position: fixed;
-        bottom: 30px;
-        width: 50%;
-        left: 25%;
-        z-index: 999;
+        padding-bottom: 2rem;
+        padding-top: 1rem;
     }
-    .stChatInput > div {
+    
+    /* Ubah kotak input menjadi putih rounded (Pill Shape) */
+    .stChatInputContainer > div {
         background-color: white !important;
-        border-radius: 30px !important;
+        border-radius: 50px !important;
         color: black !important;
-        box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
-    }
-    .stChatInput textarea {
-        color: black !important;
+        border: none !important;
+        box-shadow: 0 0 15px rgba(255,255,255,0.1) !important;
     }
     
-    /* Footer Styling */
-    .footer-text {
+    /* Text input color */
+    .stChatInputContainer textarea {
+        color: #333 !important;
+        font-size: 15px !important;
+    }
+    
+    /* Icon kirim */
+    .stChatInputContainer button {
+        color: #2c3e50 !important;
+    }
+
+    /* Footer Text */
+    .footer-divine {
         text-align: center;
+        color: #bdc3c7;
         font-size: 12px;
-        color: rgba(255,255,255,0.5);
-        margin-top: 50px;
+        margin-top: -15px;
+        margin-bottom: 10px;
     }
-    
-    /* Hiding Standard Elements */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
 
 </style>
 """, unsafe_allow_html=True)
@@ -234,168 +218,118 @@ st.markdown("""
 # 3. BACKEND LOGIC (RAG & DATA)
 # ====================================================================
 
-@st.cache_resource(show_spinner="Menghubungkan ke Hikmat Ilahi...")
-def initialize_engine():
-    """Memuat data dan inisialisasi Index LlamaIndex."""
-    if not API_KEY_ANDA:
-        return None
-
+@st.cache_resource
+def load_data():
+    if not API_KEY_ANDA: return None, None
     try:
-        # Load Data
         df = pd.read_csv(DATA_FILE)
-        
-        # Bersihkan data jika kolom ada
+        # Bersihkan data
         if 'Isi' in df.columns:
             df['text_bersih'] = df['Isi'].astype(str).str.replace('<t/>', '', regex=False)
         else:
-            df['text_bersih'] = df['text'].astype(str) # Fallback
-
+            df['text_bersih'] = df['text'].astype(str)
+        
         df['referensi'] = df['Nama ayat'].astype(str) + ' ' + df['Bagian'].astype(str) + ':' + df['Ayat'].astype(str)
         
-        documents = [
-            Document(
-                text=row['text_bersih'],
-                metadata={"referensi": row['referensi']}
-            )
-            for _, row in df.iterrows()
-        ]
-
-        # Setup Model
-        Settings.llm = GoogleGenAI(model="models/gemini-2.0-flash-exp", api_key=API_KEY_ANDA, temperature=0.7)
+        documents = [Document(text=row['text_bersih'], metadata={"ref": row['referensi']}) for _, row in df.iterrows()]
+        
+        Settings.llm = GoogleGenAI(model="models/gemini-2.0-flash-exp", api_key=API_KEY_ANDA)
         Settings.embed_model = GoogleGenAIEmbedding(model="models/embedding-001", api_key=API_KEY_ANDA)
-
-        # Buat Index
+        
         index = VectorStoreIndex.from_documents(documents)
-        return index, df # Return df juga untuk fitur Daily Verse
-    except Exception as e:
-        st.error(f"Error System: {e}")
+        return index, df
+    except:
         return None, None
 
-INDEX, DF_ALKITAB = initialize_engine()
+INDEX, DF_ALKITAB = load_data()
 
-def get_chat_response(query_text):
-    if not INDEX:
-        return "Maaf, sistem sedang offline. Periksa API Key Anda."
-    
-    # Custom Prompt agar personality cocok dengan "Prophet-GPT"
-    prompt = f"""
-    Anda adalah 'Prophet-GPT', asisten Alkitab yang bijaksana, hangat, dan modern.
-    Jawablah pertanyaan ini: "{query_text}"
-    
-    Panduan:
-    1. Gunakan bahasa yang santai namun hormat (seperti mentor pemuda).
-    2. Sertakan referensi ayat Alkitab yang relevan jika ada.
-    3. Jika pengguna sedih, berikan penghiburan.
-    4. Jaga jawaban tetap ringkas (maksimal 3 paragraf pendek) agar enak dibaca di chat bubble.
-    """
-    
-    query_engine = INDEX.as_query_engine()
-    response = query_engine.query(prompt)
-    return str(response)
+def get_answer(query):
+    if not INDEX: return "Maaf, sistem sedang offline (Cek API Key)."
+    qe = INDEX.as_query_engine()
+    res = qe.query(f"Jawab pertanyaan ini dengan bijak, singkat, dan sertakan ayat: {query}")
+    return str(res)
 
-def get_daily_verse():
-    """Mengambil ayat acak dari DataFrame."""
-    if DF_ALKITAB is not None and not DF_ALKITAB.empty:
-        random_row = DF_ALKITAB.sample(1).iloc[0]
-        ref = random_row['referensi']
-        isi = random_row['text_bersih']
-        return f"🌟 **Ayat Hari Ini ({ref})**\n\n_{isi}_"
-    return "Data Alkitab belum dimuat."
-
-def log_user_visit():
-    """Mencatat sesi pengguna (sederhana tanpa login untuk tampilan cepat)."""
-    if "user_logged" not in st.session_state:
-        st.session_state.user_logged = True
-        if not os.path.exists(USER_LOG_FILE):
-            pd.DataFrame(columns=["Timestamp", "Activity"]).to_csv(USER_LOG_FILE, index=False)
-        
-        new_log = pd.DataFrame({"Timestamp": [datetime.now()], "Activity": ["New Session"]})
-        new_log.to_csv(USER_LOG_FILE, mode='a', header=False, index=False)
+def get_verse():
+    if DF_ALKITAB is not None:
+        row = DF_ALKITAB.sample(1).iloc[0]
+        return f"📖 **{row['referensi']}**\n\n_{row['text_bersih']}_"
+    return "Data Alkitab belum siap."
 
 # ====================================================================
-# 4. LAYOUT UI & INTERAKSI
+# 4. TAMPILAN UI (SINGLE BOX LAYOUT)
 # ====================================================================
 
-# Panggil Log
-log_user_visit()
+# -- HEADER BAGIAN ATAS --
+c_head1, c_head2 = st.columns([3, 1])
+with c_head1:
+    st.markdown('<p class="header-text">ALPHA & OMEGA 📡</p>', unsafe_allow_html=True)
+    st.markdown('<p class="header-sub">CHAT</p>', unsafe_allow_html=True)
+with c_head2:
+    # Ikon buku dan menu hamburger (dummy visual)
+    st.markdown('<div class="top-icons">📖 &nbsp; ☰</div>', unsafe_allow_html=True)
 
-# HEADER
-c1, c2, c3 = st.columns([1, 6, 1])
-with c2:
-    st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
-    st.markdown('<div class="header-title">ALPHA & OMEGA</div>', unsafe_allow_html=True)
-    st.markdown('<div class="header-subtitle">CHAT</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+st.markdown("---") # Garis pemisah tipis
 
-# MAIN CONTENT AREA (Grid 3 Kolom)
-# Rasio: 1.5 (Kiri) - 4 (Chat) - 1.5 (Kanan)
-col_left, col_center, col_right = st.columns([1.5, 4, 1.5])
+# -- KONTEN UTAMA (GRID 3 KOLOM) --
+col_left, col_mid, col_right = st.columns([1.3, 3, 1.3])
 
-# --- KOLOM KIRI: PROPHET AVATAR ---
+# 1. KOLOM KIRI: AVATAR
 with col_left:
-    st.markdown('<div class="glass-panel avatar-container">', unsafe_allow_html=True)
-    # Menggunakan placeholder gambar burung hantu neon
-    st.markdown('<img src="https://cdn-icons-png.flaticon.com/512/4710/4710926.png" class="neon-owl">', unsafe_allow_html=True) 
-    st.markdown('<div class="prophet-text">PROPHET-GPT</div>', unsafe_allow_html=True)
+    st.markdown('<div class="owl-container">', unsafe_allow_html=True)
+    # Gambar Burung Hantu Neon (Link luar untuk demo)
+    st.markdown('<img src="https://cdn-icons-png.flaticon.com/512/3468/3468306.png" class="neon-glow-img">', unsafe_allow_html=True)
+    st.markdown('<div class="prophet-label">PROPHET-GPT</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-# --- KOLOM TENGAH: CHAT AREA ---
-with col_center:
-    # Container Chat
-    st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
+# 2. KOLOM TENGAH: CHAT
+with col_mid:
+    # Container Chat dengan tinggi tetap (Scrollable)
+    chat_container = st.container(height=350)
     
-    # Inisialisasi History
     if "messages" not in st.session_state:
         st.session_state.messages = [
-            {"role": "assistant", "content": "Hai! Siap menjelajahi hikmat kuno hari ini? 😌✨"},
-            {"role": "assistant", "content": "Tanya saya apa saja tentang Alkitab — cerita, ayat, atau maknanya! 🔥🙏"}
+            {"role": "ai", "content": "Hey there! Ready to explore some ancient wisdom? 😯✨"},
+            {"role": "ai", "content": "Ask me anything about the Bible – stories, verses, meanings! 🔥✨"}
         ]
     
-    # Render Chat History (Scroll Area)
-    chat_container = st.container(height=500) # Streamlit native scroll container
     with chat_container:
         for msg in st.session_state.messages:
-            if msg["role"] == "assistant":
-                st.markdown(f'<div class="bot-message">{msg["content"]}</div>', unsafe_allow_html=True)
+            if msg['role'] == 'ai':
+                st.markdown(f'<div class="bubble-bot">{msg["content"]}</div>', unsafe_allow_html=True)
             else:
-                st.markdown(f'<div class="user-message">{msg["content"]}</div>', unsafe_allow_html=True)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="bubble-user">{msg["content"]}</div>', unsafe_allow_html=True)
 
-# --- KOLOM KANAN: MENU BUTTONS ---
+# 3. KOLOM KANAN: MENU BUTTONS
 with col_right:
-    # Menggunakan st.container untuk styling gap
-    with st.container():
-        st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
-        
-        # Tombol 1: Daily Verse (Fungsional)
-        if st.button("Daily Verse 🙏", use_container_width=True):
-            verse = get_daily_verse()
-            st.session_state.messages.append({"role": "assistant", "content": verse})
-            st.rerun()
+    st.markdown("<br>", unsafe_allow_html=True) # Spacer
+    
+    # Tombol Daily Verse (Warna Biru karena urutan pertama CSS)
+    if st.button("Daily Verse 🙏", use_container_width=True):
+        v = get_verse()
+        st.session_state.messages.append({"role": "ai", "content": v})
+        st.rerun()
 
-        # Tombol Dekoratif (Bisa dikembangkan nanti)
-        st.button("Prayer Wall ✨", use_container_width=True)
-        st.button("Study Plans 📖", use_container_width=True)
-        st.button("Youth Groups 👯‍♂️", use_container_width=True)
+    # Tombol Lainnya (Menggunakan style hack untuk warna gelap)
+    # Catatan: Di Streamlit murni sulit memberi kelas custom per tombol, 
+    # jadi kita andalkan CSS global atau bungkus dalam container.
+    
+    st.button("Prayer Wall ✨", use_container_width=True)
+    st.button("Study Plans", use_container_width=True)
+    st.button("Youth Groups 👼", use_container_width=True)
 
-# --- INPUT AREA (FLOATING BOTTOM) ---
-# Input ditaruh di luar kolom agar full width atau centered di bawah
-input_placeholder = st.empty()
-user_input = st.chat_input("Ketik pertanyaanmu di sini...", key="chat_input")
+# -- FOOTER & INPUT --
+# Input ditaruh di bawah kolom agar full width di dalam box
+st.markdown("<br>", unsafe_allow_html=True)
+
+# Input Field
+user_input = st.chat_input("Type your question...", key="main_input")
 
 if user_input:
-    # 1. Tampilkan pesan user
     st.session_state.messages.append({"role": "user", "content": user_input})
-    
-    # 2. Proses Jawaban (Loading state)
-    with col_center:
-        with st.spinner("🕊️ Mencari hikmat..."):
-             response = get_chat_response(user_input)
-             st.session_state.messages.append({"role": "assistant", "content": response})
-    
-    # 3. Refresh halaman untuk update UI
+    with st.spinner("..."):
+        ans = get_answer(user_input)
+        st.session_state.messages.append({"role": "ai", "content": ans})
     st.rerun()
 
-# FOOTER
-st.markdown('<div class="footer-text">Powered by Divine AI. Connect. Learn. Grow.</div>', unsafe_allow_html=True)
+# Text Powered By
+st.markdown('<div class="footer-divine">Powered by Divine AI. Connect. Learn. Grow.</div>', unsafe_allow_html=True)
