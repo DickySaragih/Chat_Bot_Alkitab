@@ -3,7 +3,7 @@ import os
 import pandas as pd
 from datetime import datetime
 
-# Menggunakan library yang lebih stabil untuk LlamaIndex
+# Menggunakan library LlamaIndex yang paling stabil untuk Gemini
 from llama_index.core import VectorStoreIndex, Document, Settings
 from llama_index.llms.gemini import Gemini
 from llama_index.embeddings.gemini import GeminiEmbedding
@@ -11,7 +11,7 @@ from llama_index.embeddings.gemini import GeminiEmbedding
 # ====================================================================
 # 1. KONFIGURASI HALAMAN
 # ====================================================================
-
+# Pastikan API Key diatur di Streamlit Secrets atau Environment Variable
 API_KEY = os.environ.get("GEMINI_API_KEY")
 
 st.set_page_config(
@@ -20,115 +20,181 @@ st.set_page_config(
     layout="wide"
 )
 
-# CSS Responsif (Sesuai permintaan: Bible logo, Mobile & Laptop friendly)
+# CSS Responsif & Detail Tampilan (Laptop & HP)
 st.markdown("""
 <style>
-    .stApp { background: linear-gradient(135deg, #121212 0%, #1a1a2e 100%); color: white; }
-    header, footer, #MainMenu {visibility: hidden;}
-    .main-box {
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(15px);
-        border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 20px;
-        margin: auto;
-        max-width: 900px;
+    .stApp {
+        background: url("https://images.unsplash.com/photo-1507434965515-61970f2bd7c6?q=80&w=2070&auto=format&fit=crop") no-repeat center center fixed;
+        background-size: cover;
     }
-    .app-title { font-family: 'serif'; font-size: clamp(24px, 5vw, 40px); color: #f1c40f; text-align: center; font-weight: 800; }
-    .bible-logo { text-align: center; font-size: 60px; margin-bottom: 10px; }
-    .bubble-bot { background: #fdfdfd; color: #222; padding: 12px; border-radius: 15px 15px 15px 2px; margin: 10px 0; max-width: 85%; font-size: 14px; box-shadow: 2px 2px 10px rgba(0,0,0,0.2); }
-    .bubble-user { background: #f1c40f; color: #000; padding: 12px; border-radius: 15px 15px 2px 15px; margin: 10px 0 10px auto; max-width: 85%; text-align: right; font-size: 14px; }
+    header, footer, #MainMenu {visibility: hidden;}
+
+    /* Kontainer Utama (Single Box) */
+    .main-container {
+        background: rgba(15, 15, 25, 0.85);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 25px;
+        padding: 30px;
+        max-width: 950px;
+        margin: auto;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+    }
+
+    .app-title {
+        color: #f1c40f;
+        font-family: 'Georgia', serif;
+        font-size: clamp(24px, 5vw, 42px);
+        text-align: center;
+        font-weight: bold;
+        margin-bottom: 0px;
+        text-shadow: 0 0 15px rgba(241, 196, 15, 0.4);
+    }
+
+    .bible-logo {
+        text-align: center;
+        font-size: 70px;
+        margin: 10px 0;
+    }
+
+    /* Chat Bubble Styling */
+    .bot-bubble {
+        background: #f8f9fa;
+        color: #2d3436;
+        padding: 15px;
+        border-radius: 20px 20px 20px 5px;
+        margin: 10px 0;
+        max-width: 85%;
+        font-size: 14px;
+        line-height: 1.6;
+        box-shadow: 3px 3px 10px rgba(0,0,0,0.1);
+    }
+    .user-bubble {
+        background: linear-gradient(135deg, #f1c40f, #e67e22);
+        color: white;
+        padding: 15px;
+        border-radius: 20px 20px 5px 20px;
+        margin: 10px 0 10px auto;
+        max-width: 85%;
+        text-align: right;
+        font-size: 14px;
+        box-shadow: -3px 3px 10px rgba(230, 126, 34, 0.3);
+    }
+
+    /* Responsivitas Mobile */
+    @media (max-width: 768px) {
+        .main-container { padding: 15px; border-radius: 0; }
+        .stButton button { width: 100%; }
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # ====================================================================
-# 2. SISTEM RAG (DIPERBAIKI)
+# 2. ENGINE ALKITAB (FIX ERROR HANDLING)
 # ====================================================================
 
 @st.cache_resource(show_spinner=False)
-def init_system():
+def initialize_bible_engine():
     if not API_KEY:
-        st.error("API KEY TIDAK DITEMUKAN!")
+        st.error("API Key Gemini tidak ditemukan!")
         return None, None
     try:
-        # Load Data
+        # Load Data CSV Anda
         df = pd.read_csv("Alkitab.csv")
-        df['isi_clean'] = df['Isi'].astype(str).str.replace('<t/>', '', regex=False)
-        df['ref'] = df['Nama ayat'].astype(str) + " " + df['Bagian'].astype(str) + ":" + df['Ayat'].astype(str)
         
-        docs = [Document(text=row['isi_clean'], metadata={"ref": row['ref']}) for _, row in df.iterrows()]
+        # Pembersihan data sesuai kolom Anda
+        df['content'] = df['Isi'].astype(str).str.replace('<t/>', '', regex=False)
+        df['reference'] = df['Nama ayat'].astype(str) + " " + \
+                          df['Bagian'].astype(str) + ":" + \
+                          df['Ayat'].astype(str)
         
-        # PENTING: Gunakan klas Gemini & GeminiEmbedding (Bukan GoogleGenAI)
-        # Ini lebih kompatibel dengan LlamaIndex versi terbaru
-        Settings.llm = Gemini(model="models/gemini-1.5-flash", api_key=API_KEY)
-        Settings.embed_model = GeminiEmbedding(model_name="models/embedding-001", api_key=API_KEY)
-        Settings.chunk_size = 512
+        documents = [
+            Document(text=row['content'], metadata={"ref": row['reference']}) 
+            for _, row in df.iterrows()
+        ]
+
+        # Konfigurasi LLM (Menggunakan library Gemini yang lebih stabil)
+        Settings.llm = Gemini(
+            model="models/gemini-1.5-flash", 
+            api_key=API_KEY,
+            temperature=0.3
+        )
+        Settings.embed_model = GeminiEmbedding(
+            model_name="models/embedding-001", 
+            api_key=API_KEY
+        )
         
-        index = VectorStoreIndex.from_documents(docs)
+        index = VectorStoreIndex.from_documents(documents)
         return index, df
     except Exception as e:
-        st.error(f"Error Inisialisasi: {e}")
+        st.error(f"Gagal memuat sistem: {e}")
         return None, None
 
-INDEX, DF_ALKITAB = init_system()
+INDEX, BIBLE_DF = initialize_bible_engine()
 
-def get_ai_response(user_query):
+def get_bible_response(user_input):
     if not INDEX:
-        return "Sistem belum siap."
+        return "Sistem sedang mengalami gangguan teknis."
     try:
-        # Gunakan mode respons 'compact' untuk menghindari error ClientError saat penggabungan teks
+        # PENTING: response_mode="compact" untuk menghindari ClientError API
         query_engine = INDEX.as_query_engine(
-            response_mode="compact", 
-            similarity_top_k=2
+            response_mode="compact",
+            similarity_top_k=3
         )
-        response = query_engine.query(f"Jawablah dengan kasih, singkat, dan sertakan ayat: {user_query}")
+        prompt = f"Sebagai asisten Alkitab yang bijak, jawablah pertanyaan ini berdasarkan data Alkitab yang ada: {user_input}. Berikan referensi ayatnya."
+        response = query_engine.query(prompt)
         return str(response)
     except Exception as e:
-        # Menangani error API tanpa mematikan aplikasi
-        return f"Maaf, perjalanan ini menemui kendala teknis sementara. Mari coba tanyakan hal lain. 🙏"
+        return f"Maaf, terjadi kendala saat memproses permintaan. Mari coba tanyakan hal lain. 🙏"
 
 # ====================================================================
-# 3. TAMPILAN UI
+# 3. ANTARMUKA CHAT (SINGLE BOX)
 # ====================================================================
 
-st.markdown('<div class="main-box">', unsafe_allow_html=True)
-st.markdown('<div class="bible-logo">📖</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-container">', unsafe_allow_html=True)
 st.markdown('<div class="app-title">BIBLE IS JOURNEY</div>', unsafe_allow_html=True)
+st.markdown('<div class="bible-logo">📖</div>', unsafe_allow_html=True)
 
-# State Management
-if "history" not in st.session_state:
-    st.session_state.history = [{"role": "ai", "content": "Halo! Saya adalah teman perjalananamu dalam memahami Alkitab. Apa yang ingin kamu ketahui?"}]
+# State untuk History Chat
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = [
+        {"role": "ai", "content": "Halo! Saya teman perjalananmu. Apa yang ingin kamu pelajari dari Alkitab hari ini?"}
+    ]
 
-# Chat Display
-chat_box = st.container()
+# Layout Chat (Menggunakan Container agar scrollable)
+chat_box = st.container(height=400, border=False)
 with chat_box:
-    for msg in st.session_state.history:
-        style = "bubble-bot" if msg["role"] == "ai" else "bubble-user"
-        st.markdown(f'<div class="{style}">{msg["content"]}</div>', unsafe_allow_html=True)
+    for chat in st.session_state.chat_history:
+        if chat["role"] == "ai":
+            st.markdown(f'<div class="bot-bubble">{chat["content"]}</div>', unsafe_allow_html=True)
+        else:
+            st.markdown(f'<div class="user-bubble">{chat["content"]}</div>', unsafe_allow_html=True)
 
-# Input
-if prompt := st.chat_input("Tulis pertanyaanmu..."):
-    st.session_state.history.append({"role": "user", "content": prompt})
+# Input Chat
+if user_prompt := st.chat_input("Ketik pesan atau pertanyaan Alkitab..."):
+    st.session_state.chat_history.append({"role": "user", "content": user_prompt})
     
-    # Langsung jalankan AI
     with st.spinner("Mencari hikmat..."):
-        res = get_ai_response(prompt)
-        st.session_state.history.append({"role": "ai", "content": res})
+        ai_ans = get_bible_response(user_prompt)
+        st.session_state.chat_history.append({"role": "ai", "content": ai_ans})
     
     st.rerun()
 
-# Tombol Menu Samping (Responsif)
-st.markdown("---")
-col1, col2 = st.columns(2)
-with col1:
-    if st.button("Ayat Hari Ini 🌟", use_container_width=True):
-        if DF_ALKITAB is not None:
-            r = DF_ALKITAB.sample(1).iloc[0]
-            st.session_state.history.append({"role": "ai", "content": f"🌟 **{r['ref']}**\n\n{r['isi_clean']}"})
+# Tombol Menu (Bottom)
+st.markdown("<br>", unsafe_allow_html=True)
+c1, c2, c3 = st.columns(3)
+with c1:
+    if st.button("Ayat Acak 🌟", use_container_width=True):
+        if BIBLE_DF is not None:
+            random_row = BIBLE_DF.sample(1).iloc[0]
+            verse_text = f"🌟 **{random_row['reference']}**\n\n{random_row['content']}"
+            st.session_state.chat_history.append({"role": "ai", "content": verse_text})
             st.rerun()
-with col2:
-    if st.button("Hapus Percakapan 🗑️", use_container_width=True):
-        st.session_state.history = st.session_state.history[:1]
+with c2:
+    st.button("Rencana Baca 📚", use_container_width=True)
+with c3:
+    if st.button("Hapus Chat 🗑️", use_container_width=True):
+        st.session_state.chat_history = st.session_state.chat_history[:1]
         st.rerun()
 
 st.markdown('</div>', unsafe_allow_html=True)
